@@ -22,8 +22,8 @@ loadFile('shaders/utils.glsl').then((utils) => {
   THREE.ShaderChunk['utils'] = utils;
 
   // Create Renderer
-  const camera = new THREE.PerspectiveCamera(100, width / height, 0.01, 100);
-  camera.position.set(0, 0.3, 2);
+  const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 100);
+  camera.position.set(0, 0.3, 4);
   // camera.rotation.set(2.828, 0.191, 3.108);
 
   const renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true, alpha: true});
@@ -67,11 +67,9 @@ loadFile('shaders/utils.glsl').then((utils) => {
   ]);
 
   const textureloader = new THREE.TextureLoader();
-
   const tiles = textureloader.load('stone_square.jpg');
 
   class WaterSimulation {
-
     constructor() {
       this._camera = new THREE.OrthographicCamera(0, 1, 1, 0, 0, 2000);
 
@@ -161,7 +159,6 @@ loadFile('shaders/utils.glsl').then((utils) => {
 
 
   class Caustics {
-
     constructor(lightFrontGeometry) {
       this._camera = new THREE.OrthographicCamera(0, 1, 1, 0, 0, 2000);
 
@@ -202,11 +199,44 @@ loadFile('shaders/utils.glsl').then((utils) => {
 
   }
 
+  class Walls {
+    constructor() {
+      this.material = new THREE.MeshBasicMaterial( { map: tiles } );
+      
+      this.backGeometry = new THREE.BoxGeometry(2.1, 2.1, 0.2);
+      this.back = new THREE.Mesh(this.backGeometry, this.material);
+      this.back.geometry.vertices.forEach( d => { d.z = -1.02 });
+      this.back.verticesNeedUpdate = true;
+
+      this.leftGeometry = new THREE.BoxGeometry(0.2, 2.1, 2.1);
+      this.left = new THREE.Mesh(this.leftGeometry, this.material);
+      this.left.geometry.vertices.forEach( d => { d.x = -1.02 });
+      this.left.verticesNeedUpdate = true;
+
+      this.rightGeometry = new THREE.BoxGeometry(0.2, 2.1, 2.1);
+      this.right = new THREE.Mesh(this.rightGeometry, this.material);
+      this.right.geometry.vertices.forEach( d => { d.x = 1.02 });
+      this.right.verticesNeedUpdate = true;
+
+      this.sides = [ this.back, this.left, this.right ];
+
+    }
+
+    draw(renderer) {
+      this.sides.forEach(side => {
+        // side.position.needsUpdate = true;
+        renderer.render(side, camera);
+      })
+      // renderer.render(this.back, camera);
+    }
+
+
+  }
+
 
   class Water {
 
     constructor() {
-      // this.geometry = new THREE.BoxGeometry(2, 2, 0.01);
       this.geometry = new THREE.PlaneGeometry(2, 2, 200, 200);
 
       const shadersPromises = [
@@ -230,8 +260,6 @@ loadFile('shaders/utils.glsl').then((utils) => {
         });
 
         this.mesh = new THREE.Mesh(this.geometry, this.material);
-        // console.log(this.material.vertexShader);
-
       });
     }
 
@@ -247,21 +275,6 @@ loadFile('shaders/utils.glsl').then((utils) => {
     }
 
     draw(renderer, waterTexture, causticsTexture) {
-      // this.mesh.position.y -= 0.0005;
-      // console.log(this.mesh.position.y);
-      // console.log(this.mesh.geometry.vertices[0]);
-
-      // this.mesh.geometry.vertices.forEach(d => { d.z -= 0.001; });
-      // this.mesh.geometry.verticesNeedUpdate = true;
-
-      // this.mesh.translate(0,1,0);
-
-      // console.log(this.material.uniforms['water'].value);
-
-      // this.adjustYPosition(this.mesh.position.y);
-      // console.log(this.material.vertexShader);
-
-      // console.log(this.mesh.geometry.vertices);
 
       this.material.uniforms['water'].value = waterTexture;
       this.material.uniforms['causticTex'].value = causticsTexture;
@@ -281,49 +294,6 @@ loadFile('shaders/utils.glsl').then((utils) => {
   class Pool {
 
     constructor() {
-      // this._geometry = new THREE.BufferGeometry();
-      // const vertices = new Float32Array([
-      //   -1, -1, -1,
-      //   -1, -1, 1,
-      //   -1, 1, -1,
-      //   -1, 1, 1,
-      //   1, -1, -1,
-      //   1, 1, -1,
-      //   1, -1, 1,
-      //   1, 1, 1,
-      //   -1, -1, -1,
-      //   1, -1, -1,
-      //   -1, -1, 1,
-      //   1, -1, 1,
-      //   -1, 1, -1,
-      //   -1, 1, 1,
-      //   1, 1, -1,
-      //   1, 1, 1,
-      //   -1, -1, -1,
-      //   -1, 1, -1,
-      //   1, -1, -1,
-      //   1, 1, -1,
-      //   -1, -1, 1,
-      //   1, -1, 1,
-      //   -1, 1, 1,
-      //   1, 1, 1
-      // ]);
-      // const indices = new Uint32Array([
-      //   0, 1, 2,
-      //   2, 1, 3,
-      //   4, 5, 6,
-      //   6, 5, 7,
-      //   12, 13, 14,
-      //   14, 13, 15,
-      //   16, 17, 18,
-      //   18, 17, 19,
-      //   20, 21, 22,
-      //   22, 21, 23
-      // ]);
-
-      // this._geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-      // this._geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-
       this._geometry = new THREE.BoxGeometry(2, 2, 2);
 
       const shadersPromises = [
@@ -365,46 +335,11 @@ loadFile('shaders/utils.glsl').then((utils) => {
   }
 
 
-  // class Debug {
-
-  //   constructor() {
-  //     this._camera = new THREE.OrthographicCamera(0, 1, 1, 0, 0, 1);
-  //     this._geometry = new THREE.PlaneBufferGeometry();
-
-  //     const shadersPromises = [
-  //       loadFile('shaders/debug/vertex.glsl'),
-  //       loadFile('shaders/debug/fragment.glsl')
-  //     ];
-
-  //     this.loaded = Promise.all(shadersPromises)
-  //         .then(([vertexShader, fragmentShader]) => {
-  //       this._material = new THREE.RawShaderMaterial({
-  //         uniforms: {
-  //             texture: { value: null },
-  //         },
-  //         vertexShader: vertexShader,
-  //         fragmentShader: fragmentShader,
-  //       });
-
-  //       this._mesh = new THREE.Mesh(this._geometry, this._material);
-  //     });
-  //   }
-
-  //   draw(renderer, texture) {
-  //     this._material.uniforms['texture'].value = texture;
-
-  //     renderer.setRenderTarget(null);
-  //     renderer.render(this._mesh, this._camera);
-  //   }
-
-  // }
-
   const waterSimulation = new WaterSimulation();
   const water = new Water();
   const caustics = new Caustics(water.geometry);
   const pool = new Pool();
-
-  // const debug = new Debug();
+  const walls = new Walls();
 
   const start = new Date();
 
@@ -421,22 +356,20 @@ loadFile('shaders/utils.glsl').then((utils) => {
 
     const causticsTexture = caustics.texture.texture;
 
-    // debug.draw(renderer, causticsTexture);
-
     renderer.setRenderTarget(null);
     renderer.setClearColor(white, 1);
     renderer.clear();
 
     // Decrease Height
     const tick = new Date() - start;
-    pool.setHeight(2-(tick/10000))
-    water.adjustYPositionVertices(-(tick/40000))
+    // pool.setHeight(2-(tick/10000))
+    // water.adjustYPositionVertices(-(tick/40000))
     
     // water.adjustYPosition(-0.99);
 
-
     water.draw(renderer, waterTexture, causticsTexture);
     pool.draw(renderer, waterTexture, causticsTexture);
+    walls.draw(renderer);
 
     controls.update();
 
